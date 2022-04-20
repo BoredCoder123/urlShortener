@@ -1,6 +1,7 @@
 package com.example.urlshortener.controller;
 
 import com.example.urlshortener.request.BasicUrlRequest;
+import com.example.urlshortener.response.FullUrlResponse;
 import com.example.urlshortener.response.ShortenUrlResponse;
 import com.example.urlshortener.service.ShortService;
 import lombok.extern.log4j.Log4j2;
@@ -32,6 +33,18 @@ public class ShortController {
         try{
             CompletableFuture<ShortenUrlResponse> resp = shortService.shortenUrl(basicUrlRequest);
             return new ResponseEntity<ShortenUrlResponse>(resp.get(), HttpStatus.OK);
+        }catch (Exception e){
+            e.printStackTrace();
+            log.info(e);
+            return new ResponseEntity<String>("Unable to get shortened url", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/basic-expand")
+    public ResponseEntity expandBasicUrl(@RequestBody BasicUrlRequest basicUrlRequest){
+        try{
+            CompletableFuture<FullUrlResponse> resp = shortService.expandBasicUrl(basicUrlRequest);
+            return new ResponseEntity<FullUrlResponse>(resp.get(), HttpStatus.OK);
         }catch (Exception e){
             e.printStackTrace();
             log.info(e);
