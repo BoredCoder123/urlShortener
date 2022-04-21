@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -113,7 +114,8 @@ public class ShortServiceImpl implements ShortService {
             } else {
                 throw new Exception("Url not valid");
             }
-            String respFromDb = basicRepo.getFullUrl(sevenChar);
+            String respFromDb = basicRepo.getFullUrl(sevenChar, new java.sql.Timestamp(System.currentTimeMillis()));
+            log.info(new Timestamp(System.currentTimeMillis()));
             if (respFromDb == null)
                 throw new Exception("Unable to find in database");
             if (endpoint == '\0')
@@ -149,7 +151,7 @@ public class ShortServiceImpl implements ShortService {
                 throw new Exception("Invalid special url");
             String base62 = restUrl.substring(0, company.getShortUrlLen());
             String rest = restUrl.substring(company.getShortUrlLen()+1);
-            SpecialShortTable specialShort = specialRepo.findByCompanyIdAndShortUrl(company.getPkId(), base62);
+            SpecialShortTable specialShort = specialRepo.findByCompanyIdAndShortUrl(company.getPkId(), base62, new Timestamp(System.currentTimeMillis()));
             if(specialShort ==null)
                 throw new Exception("Invalid special url");
             return CompletableFuture.completedFuture(new FullUrlResponse(specialShort.getFullUrl()+breakChar+rest));
