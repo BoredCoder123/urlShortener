@@ -1,25 +1,40 @@
-package com.example.urlshortener.service;
+package com.example.urlshortener.service.impl;
 
 import com.example.urlshortener.constants.UrlConstants;
 import com.example.urlshortener.entity.BasicShortTable;
+import com.example.urlshortener.entity.CompanyTable;
+import com.example.urlshortener.entity.SpecialShortTable;
 import com.example.urlshortener.repository.BasicShortTableRepository;
+import com.example.urlshortener.repository.CompanyTableRepository;
+import com.example.urlshortener.repository.SpecialShortTableRepository;
 import com.example.urlshortener.request.BasicUrlRequest;
+import com.example.urlshortener.request.SpecialUrlRequest;
 import com.example.urlshortener.response.FullUrlResponse;
 import com.example.urlshortener.response.ShortenUrlResponse;
+import com.example.urlshortener.service.ShortService;
 import com.example.urlshortener.util.Base62Convertor;
 import com.example.urlshortener.util.UrlValidator;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@Log4j2
 public class ShortServiceImpl implements ShortService {
 
     @Autowired
     private BasicShortTableRepository basicRepo;
+
+    @Autowired
+    private CompanyTableRepository companyRepo;
+
+    @Autowired
+    private SpecialShortTableRepository specialRepo;
 
     @Override
     @Async
@@ -70,7 +85,6 @@ public class ShortServiceImpl implements ShortService {
                     throw new Exception("Invalid url");
                 remaining = url.substring(UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen + 1);
             }
-//        }else if(url.length() >=24 && url.substring(0, 17).equals("http://www.an.ka/")){
         }else if(url.length() >=(UrlConstants.httpLen+UrlConstants.wwwLen+UrlConstants.initPathLen+1+UrlConstants.shortUrlLen)
                 && url.substring(0, UrlConstants.httpLen+UrlConstants.wwwLen+UrlConstants.initPathLen)
                 .equals(UrlConstants.http+UrlConstants.www+UrlConstants.initPath)){
@@ -104,5 +118,27 @@ public class ShortServiceImpl implements ShortService {
             return CompletableFuture.completedFuture(new FullUrlResponse(respFromDb));
         else
             return CompletableFuture.completedFuture(new FullUrlResponse(respFromDb+endpoint+remaining));
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<ShortenUrlResponse> shortenSpecialUrl(SpecialUrlRequest specialUrlRequest) throws Exception {
+        UrlValidator.validateUrl(specialUrlRequest.getUrl());
+        CompanyTable companyTable = companyRepo.findCompanyByCompanyName(specialUrlRequest.getCompanyName().toLowerCase());
+        if(companyTable == null)
+            throw new Exception("Company doesn't exist");
+        Integer currCounter = specialRepo.findCountOfCompany(companyTable.getPkId());
+        currCounter++;
+        SpecialShortTable newSpecial = new SpecialShortTable();
+        newSpecial.setCreatedAt(new Date());
+        newSpecial.setFullUrl(specialUrlRequest.getUrl());
+        newSpecial.setShortUrl(Base62Convertor.base62Convertor(currCounter));
+        newSpecial.setCompanyTable(companyTable);
+        newSpecial.setExpiresAt(new Date(System.currentTimeMillis()+ 1000L *60*60*24*365* companyTable.getExpiresIn()));
+        SpecialShortTable savedSpecial = specialRepo.save(newSpecial);
+        return CompletableFuture.completedFuture(new ShortenUrlResponse(savedSpecial.getFullUrl(),
+                UrlConstants.https+UrlConstants.www+companyTable.getSpecialShortUrl()+"/"+savedSpecial.getShortUrl(),
+                savedSpecial.getCreatedAt(),
+                savedSpecial.getExpiresAt()));
     }
 }

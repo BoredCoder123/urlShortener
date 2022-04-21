@@ -1,6 +1,7 @@
 package com.example.urlshortener.controller;
 
 import com.example.urlshortener.request.BasicUrlRequest;
+import com.example.urlshortener.request.SpecialUrlRequest;
 import com.example.urlshortener.response.FullUrlResponse;
 import com.example.urlshortener.response.ShortenUrlResponse;
 import com.example.urlshortener.service.ShortService;
@@ -45,6 +46,18 @@ public class ShortController {
         try{
             CompletableFuture<FullUrlResponse> resp = shortService.expandBasicUrl(basicUrlRequest);
             return new ResponseEntity<FullUrlResponse>(resp.get(), HttpStatus.OK);
+        }catch (Exception e){
+            e.printStackTrace();
+            log.info(e);
+            return new ResponseEntity<String>("Unable to get shortened url", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/special-short")
+    public ResponseEntity shortenSpecialUrl(@RequestBody SpecialUrlRequest specialUrlRequest){
+        try{
+            CompletableFuture<ShortenUrlResponse> resp = shortService.shortenSpecialUrl(specialUrlRequest);
+            return new ResponseEntity<>(resp.get(), HttpStatus.OK);
         }catch (Exception e){
             e.printStackTrace();
             log.info(e);
