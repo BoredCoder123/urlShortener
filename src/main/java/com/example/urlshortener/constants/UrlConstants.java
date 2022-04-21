@@ -16,11 +16,16 @@ public class UrlConstants {
     @Value("${url.end:an.ka}")
     private String urlInit;
 
+    @Value("${companyInit.length:6}")
+    private Integer companyLengthInit;
+
     public static String initPath;
     public static int initPathLen;
 
     @Value("${shortUrl.length:7}")
     private Integer shortUrlLength;
+
+    public static Integer companyLenInit;
 
     public static int shortUrlLen;
 
@@ -29,5 +34,6 @@ public class UrlConstants {
         initPath = urlInit;
         shortUrlLen = shortUrlLength;
         initPathLen = initPath.length();
+        companyLenInit = companyLengthInit;
     }
 }

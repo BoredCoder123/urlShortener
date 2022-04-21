@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface CompanyTableRepository extends JpaRepository<CompanyTable, Integer> {
     CompanyTable findCompanyByCompanyName(String companyName);
+    CompanyTable findBySpecialShortUrl(String specialShortUrl);
 }

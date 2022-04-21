@@ -65,59 +65,95 @@ public class ShortServiceImpl implements ShortService {
         String remaining = "";
         char endpoint = '\0';
         UrlValidator.validateUrl(url);
-        if(url.length() < UrlConstants.initPathLen+UrlConstants.shortUrlLen+1) {
-            throw new Exception("Url not valid");
-        }else if(url.substring(0, UrlConstants.initPathLen).equals(UrlConstants.initPath)){
-            sevenChar = url.substring(UrlConstants.initPathLen+1, UrlConstants.initPathLen+1+UrlConstants.shortUrlLen);
-            if(url.length()>UrlConstants.initPathLen+1+UrlConstants.shortUrlLen) {
-                endpoint = url.charAt(UrlConstants.initPathLen+1+UrlConstants.shortUrlLen);
-                if(!(endpoint == '/' || endpoint=='?'))
-                    throw new Exception("Invalid url");
-                remaining = url.substring(UrlConstants.initPathLen+1+UrlConstants.shortUrlLen+1);
+        if(url.startsWith(UrlConstants.initPath) || url.startsWith(UrlConstants.www+UrlConstants.initPath)
+                || url.startsWith(UrlConstants.http+UrlConstants.www+UrlConstants.initPath) ||
+                url.startsWith(UrlConstants.https+UrlConstants.www+UrlConstants.initPath)) {
+            if (url.length() < UrlConstants.initPathLen + UrlConstants.shortUrlLen + 1) {
+                throw new Exception("Url not valid");
+            } else if (url.substring(0, UrlConstants.initPathLen).equals(UrlConstants.initPath)) {
+                sevenChar = url.substring(UrlConstants.initPathLen + 1, UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
+                if (url.length() > UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen) {
+                    endpoint = url.charAt(UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
+                    if (!(endpoint == '/' || endpoint == '?'))
+                        throw new Exception("Invalid url");
+                    remaining = url.substring(UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen + 1);
+                }
+            } else if (url.length() >= (UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen)
+                    && url.substring(0, UrlConstants.wwwLen + UrlConstants.initPathLen).equals(UrlConstants.www + UrlConstants.initPath)) {
+                sevenChar = url.substring(UrlConstants.wwwLen + UrlConstants.initPathLen + 1, UrlConstants.wwwLen + UrlConstants.initPathLen + 1
+                        + UrlConstants.shortUrlLen);
+                if (url.length() > UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen) {
+                    endpoint = url.charAt(UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
+                    if (!(endpoint == '/' || endpoint == '?'))
+                        throw new Exception("Invalid url");
+                    remaining = url.substring(UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen + 1);
+                }
+            } else if (url.length() >= (UrlConstants.httpLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen)
+                    && url.substring(0, UrlConstants.httpLen + UrlConstants.wwwLen + UrlConstants.initPathLen)
+                    .equals(UrlConstants.http + UrlConstants.www + UrlConstants.initPath)) {
+                sevenChar = url.substring(UrlConstants.httpLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1,
+                        UrlConstants.httpLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
+                if (url.length() > UrlConstants.httpLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen) {
+                    endpoint = url.charAt(UrlConstants.httpLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
+                    if (!(endpoint == '/' || endpoint == '?'))
+                        throw new Exception("Invalid url");
+                    remaining = url.substring(UrlConstants.httpLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen + 1);
+                }
+            } else if (url.length() >= (UrlConstants.httpsLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen)
+                    && url.substring(0, UrlConstants.httpsLen + UrlConstants.wwwLen + UrlConstants.initPathLen)
+                    .equals(UrlConstants.https + UrlConstants.www + UrlConstants.initPath)) {
+                sevenChar = url.substring(UrlConstants.httpsLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1,
+                        UrlConstants.httpsLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
+                if (url.length() > UrlConstants.httpsLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen) {
+                    endpoint = url.charAt(UrlConstants.httpsLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
+                    if (!(endpoint == '/' || endpoint == '?'))
+                        throw new Exception("Invalid url");
+                    remaining = url.substring(UrlConstants.httpsLen + UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen + 1);
+                }
+            } else {
+                throw new Exception("Url not valid");
             }
-        }else if(url.length() >=(UrlConstants.wwwLen+UrlConstants.initPathLen+1+UrlConstants.shortUrlLen)
-                && url.substring(0, UrlConstants.wwwLen+UrlConstants.initPathLen).equals(UrlConstants.www+UrlConstants.initPath)) {
-            sevenChar = url.substring(UrlConstants.wwwLen + UrlConstants.initPathLen + 1, UrlConstants.wwwLen + UrlConstants.initPathLen + 1
-                    + UrlConstants.shortUrlLen);
-            if (url.length() > UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen) {
-                endpoint = url.charAt(UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
-                if (!(endpoint == '/' || endpoint == '?'))
-                    throw new Exception("Invalid url");
-                remaining = url.substring(UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen + 1);
+            String respFromDb = basicRepo.getFullUrl(sevenChar);
+            if (respFromDb == null)
+                throw new Exception("Unable to find in database");
+            if (endpoint == '\0')
+                return CompletableFuture.completedFuture(new FullUrlResponse(respFromDb));
+            else
+                return CompletableFuture.completedFuture(new FullUrlResponse(respFromDb + endpoint + remaining));
+        }else{
+            if(url.startsWith(UrlConstants.https)){
+                url = url.substring(UrlConstants.httpsLen+UrlConstants.wwwLen);
+            }else if(url.startsWith(UrlConstants.http))
+                url = url.substring(UrlConstants.httpLen+UrlConstants.wwwLen);
+            else if(url.startsWith(UrlConstants.www))
+                url=url.substring(UrlConstants.wwwLen);
+            char breakChar = '\0';
+            int breakPoint = 0;
+            for(int i=0;i<=UrlConstants.companyLenInit;i++){
+                if(url.charAt(i)=='/'){
+                    breakChar = url.charAt(i);
+                    breakPoint = i;
+                    break;
+                }
             }
-        }else if(url.length() >=(UrlConstants.httpLen+UrlConstants.wwwLen+UrlConstants.initPathLen+1+UrlConstants.shortUrlLen)
-                && url.substring(0, UrlConstants.httpLen+UrlConstants.wwwLen+UrlConstants.initPathLen)
-                .equals(UrlConstants.http+UrlConstants.www+UrlConstants.initPath)){
-            sevenChar = url.substring(UrlConstants.httpLen+UrlConstants.wwwLen+UrlConstants.initPathLen+1,
-                    UrlConstants.httpLen+UrlConstants.wwwLen+UrlConstants.initPathLen+1+UrlConstants.shortUrlLen);
-            if(url.length()>UrlConstants.httpLen+UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen) {
-                endpoint = url.charAt(UrlConstants.httpLen+UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
-                if(!(endpoint == '/' || endpoint == '?'))
-                    throw new Exception("Invalid url");
-                remaining = url.substring(UrlConstants.httpLen+UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen+1);
-            }
-        }else if(url.length() >=(UrlConstants.httpsLen+UrlConstants.wwwLen+UrlConstants.initPathLen+1+UrlConstants.shortUrlLen)
-                && url.substring(0, UrlConstants.httpsLen+UrlConstants.wwwLen+UrlConstants.initPathLen)
-                .equals(UrlConstants.https+UrlConstants.www+UrlConstants.initPath)){
-            sevenChar = url.substring(UrlConstants.httpsLen+UrlConstants.wwwLen+UrlConstants.initPathLen+1,
-                    UrlConstants.httpsLen+UrlConstants.wwwLen+UrlConstants.initPathLen+1+UrlConstants.shortUrlLen);
-            if(url.length()>UrlConstants.httpsLen+UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen) {
-                endpoint = url.charAt(UrlConstants.httpsLen+UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen);
-                if(!(endpoint == '/' || endpoint == '?'))
-                    throw new Exception("Invalid url");
-                remaining = url.substring(UrlConstants.httpsLen+UrlConstants.wwwLen + UrlConstants.initPathLen + 1 + UrlConstants.shortUrlLen+1);
-            }
+            if(breakChar == '\0')
+                throw new Exception("Invalid url");
+            String initUrl = url.substring(0, breakPoint);
+            String restUrl = url.substring(breakPoint+1);
+            CompanyTable company = companyRepo.findBySpecialShortUrl(initUrl);
+            if(company == null)
+                throw new Exception("Invalid special url");
+            breakPoint = restUrl.charAt(company.getShortUrlLen());
+            log.info((char)breakPoint);
+            if(!(breakPoint == '/' || breakPoint == '?'))
+                throw new Exception("Invalid special url");
+            String base62 = restUrl.substring(0, company.getShortUrlLen());
+            String rest = restUrl.substring(company.getShortUrlLen()+1);
+            SpecialShortTable specialShort = specialRepo.findByCompanyIdAndShortUrl(company.getPkId(), base62);
+            if(specialShort ==null)
+                throw new Exception("Invalid special url");
+            return CompletableFuture.completedFuture(new FullUrlResponse(specialShort.getFullUrl()+breakChar+rest));
         }
-        else{
-            throw new Exception("Url not valid");
-        }
-        String respFromDb = basicRepo.getFullUrl(sevenChar);
-        if(respFromDb == null)
-            throw new Exception("Unable to find in database");
-        if(endpoint=='\0')
-            return CompletableFuture.completedFuture(new FullUrlResponse(respFromDb));
-        else
-            return CompletableFuture.completedFuture(new FullUrlResponse(respFromDb+endpoint+remaining));
     }
 
     @Override
