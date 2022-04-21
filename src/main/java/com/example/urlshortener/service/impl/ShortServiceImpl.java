@@ -21,11 +21,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-@Log4j2
 public class ShortServiceImpl implements ShortService {
 
     @Autowired
@@ -115,7 +113,6 @@ public class ShortServiceImpl implements ShortService {
                 throw new Exception("Url not valid");
             }
             String respFromDb = basicRepo.getFullUrl(sevenChar, new java.sql.Timestamp(System.currentTimeMillis()));
-            log.info(new Timestamp(System.currentTimeMillis()));
             if (respFromDb == null)
                 throw new Exception("Unable to find in database");
             if (endpoint == '\0')
@@ -146,7 +143,6 @@ public class ShortServiceImpl implements ShortService {
             if(company == null)
                 throw new Exception("Invalid special url");
             breakPoint = restUrl.charAt(company.getShortUrlLen());
-            log.info((char)breakPoint);
             if(!(breakPoint == '/' || breakPoint == '?'))
                 throw new Exception("Invalid special url");
             String base62 = restUrl.substring(0, company.getShortUrlLen());
@@ -170,7 +166,7 @@ public class ShortServiceImpl implements ShortService {
         SpecialShortTable newSpecial = new SpecialShortTable();
         newSpecial.setCreatedAt(new Date());
         newSpecial.setFullUrl(specialUrlRequest.getUrl());
-        newSpecial.setShortUrl(Base62Convertor.base62Convertor(currCounter));
+        newSpecial.setShortUrl(Base62Convertor.specialBase62Convertor(currCounter, companyTable.getShortUrlLen()));
         newSpecial.setCompanyTable(companyTable);
         newSpecial.setExpiresAt(new Date(System.currentTimeMillis()+ 1000L *60*60*24*365* companyTable.getExpiresIn()));
         SpecialShortTable savedSpecial = specialRepo.save(newSpecial);
